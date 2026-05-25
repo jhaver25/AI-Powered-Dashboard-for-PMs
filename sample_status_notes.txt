@@ -1,0 +1,544 @@
+PROGRAM STATUS NOTES — Q3 REVIEW
+Week of May 25, 2026
+
+TEAMS: Frontend Engineering | Backend Engineering | Mobile Engineering |
+       Data Science & AI | DevOps & Infrastructure | Security Engineering
+
+================================================================
+
+## Customer Portal Redesign
+Status: ON TRACK
+Teams: Frontend Engineering, Backend Engineering
+
+The redesign hit its major milestone this week with all 47 design system
+components deployed to staging and passing WCAG 2.1 AA accessibility audits.
+The Backend team delivered the BFF (Backend for Frontend) API layer ahead of
+schedule, unblocking Frontend for the remaining four feature modules.
+
+Accomplishments:
+- Design system v1.0 live in staging; all components passing accessibility audit
+- BFF API layer complete and integrated with authentication service
+- Lighthouse performance score improved from 61 to 89
+- UAT kickoff completed with 12 pilot users; initial feedback positive
+
+Risks:
+- Third-party analytics SDK causing ~15ms render delay on dashboard page; team
+  investigating lazy-load mitigation. Low risk to timeline.
+- Brand team is 3 business days late delivering final logo and icon assets;
+  escalation underway. Minor risk.
+
+Dependencies:
+- Legal review of updated Terms of Service copy must complete before launch
+  (in progress, expected in 2 weeks)
+- Backend Engineering must finalize API rate limiting config before load testing
+  can begin
+- Shared design tokens must be finalized 2 weeks before Mobile App v5.0 launch
+  to ensure cross-platform visual consistency
+
+Executive decisions needed: None at this time.
+
+Immediate next steps:
+- Complete 4 remaining feature modules (Account Settings, Notification
+  Preferences, Billing Summary, Support Center)
+- Begin load testing once rate limiting config is finalized
+- Resolve analytics SDK render delay
+
+Long-term next steps:
+- Phased rollout: 10% of users Week 1, 50% Week 2, 100% Week 3
+- Finalize post-launch monitoring plan
+- Internationalization (i18n) for 3 target markets planned for Q4
+
+
+================================================================
+
+## Payment Processing Modernization
+Status: AT RISK
+Teams: Backend Engineering, DevOps & Infrastructure, Security Engineering
+
+Migration from the legacy Stripe v2 + custom gateway to a unified Stripe v3
+implementation is progressing but has encountered compliance-related delays.
+Security Engineering flagged that the PCI-DSS assessment timeline conflicts with
+the planned go-live date, and DevOps has identified infrastructure changes
+required to reduce PCI scope that were not in the original plan.
+
+Accomplishments:
+- Stripe v3 integration complete in dev environment; all payment flows tested
+- Tokenization service deployed to staging with zero-downtime migration path
+- PCI scope reduction architecture finalized with Security Engineering
+- Chargeback reconciliation logic rewritten and validated
+
+Risks:
+- HIGH: PCI-DSS audit is scheduled for Week 6 of an 8-week project. Any
+  remediation finding pushes go-live by at least 3 weeks.
+- HIGH: Legacy gateway contract expires in 10 weeks — insufficient buffer if
+  go-live slips.
+- MEDIUM: 3 internal teams (Subscriptions, Marketplace, International) have
+  direct integrations with the legacy payment API that must be migrated before
+  cutover; Subscriptions team is tracking 2 weeks behind schedule.
+
+Dependencies:
+- Security Engineering PCI gap assessment is 1 week overdue; DevOps cannot
+  finalize network segmentation until it is delivered.
+- Zero-Trust Security team: new Stripe v3 infrastructure must be Zero-Trust
+  compliant from Day 1 — joint design session needed.
+- Fraud Detection team: Stripe v3 transaction event schema changes must be
+  communicated to Data Science & AI before cutover to prevent feature pipeline
+  breakage.
+
+Executive decisions needed:
+- URGENT: If the PCI audit reveals significant findings, leadership must decide
+  whether to extend the legacy gateway contract (~$180K/quarter) or accept
+  elevated compliance risk and proceed on schedule. Risk tolerance threshold
+  must be set before the audit begins.
+
+Immediate next steps:
+- Security Engineering to deliver PCI gap assessment by EOW
+- Backend Engineering to begin parallel migration of Subscriptions team legacy
+  API integrations
+- DevOps to complete network segmentation design once gap assessment is in
+
+Long-term next steps:
+- Legacy gateway decommission plan (estimated 60 days post-go-live)
+- Expand tokenization service to cover all stored payment methods
+- Evaluate dynamic 3D Secure for fraud reduction in Q4
+
+
+================================================================
+
+## Real-Time Recommendation Engine
+Status: OFF TRACK
+Teams: Data Science & AI, Backend Engineering, DevOps & Infrastructure
+
+The real-time recommendation engine — intended to replace our batch-based
+collaborative filtering system — is significantly behind schedule and facing
+compounding technical and budget issues. Model latency is 3x the 150ms SLA
+target, cloud costs are running 240% over budget, and the feature store that
+Backend Engineering was supposed to deliver 3 weeks ago has still not arrived.
+An executive decision on path forward is urgently needed.
+
+Accomplishments:
+- Candidate generation model v0.4 achieving 78% relevance@10, up from 71% in v0.3
+- A/B testing infrastructure deployed and validated
+- Initial feature store schema designed and reviewed
+
+Risks:
+- CRITICAL: Model inference latency at 450ms P99 against a 150ms SLA. Root
+  cause is the two-tower architecture. Team is evaluating ANN caching as
+  mitigation but that work is not currently scoped.
+- HIGH: Cloud compute costs for training are $47K/month against a $20K budget.
+  Unsustainable without an architectural change or budget increase.
+- HIGH: Feature store not delivered by Backend Engineering (3 weeks overdue, no
+  confirmed date). Data Science team is using a temporary workaround that will
+  not scale to production.
+- MEDIUM: No schedule buffer for ANN caching work — any further delay pushes
+  past the Q3 board commitment.
+
+Dependencies:
+- BLOCKED: Feature store delivery from Backend Engineering. This is the single
+  biggest technical blocker on the project.
+- DevOps must provision GPU cluster expansion before retraining can scale —
+  requires budget approval first.
+- Real-time A/B testing requires UI surface area coordination with the Customer
+  Portal Redesign team.
+
+Executive decisions needed:
+- CRITICAL: Project will miss Q3 deadline and is over budget. Three options for
+  leadership decision: (1) Increase cloud budget $60K/month and maintain full
+  scope, (2) Descope to a simpler matrix factorization approach that can hit the
+  timeline, or (3) Push to Q4 and build the real-time engine correctly. Team
+  recommends option 2 or 3. Decision needed by Thursday.
+- If option 1 is chosen: GPU cluster expansion budget approval required.
+
+Immediate next steps:
+- Data Science & AI: present ANN caching feasibility and the 3 path options to
+  leadership by Thursday
+- Backend Engineering: provide firm delivery date for feature store this week
+- DevOps: right-sizing cost analysis for GPU cluster
+
+Long-term next steps:
+- If descoped (option 2): deploy matrix factorization model by Q3; plan
+  real-time engine for Q1 next year
+- Regardless of path: implement MLflow model registry for proper experiment
+  tracking and reproducibility
+
+
+================================================================
+
+## Mobile App v5.0 Launch
+Status: ON TRACK
+Teams: Mobile Engineering, Backend Engineering
+
+Mobile App v5.0 is 5 weeks from launch and in strong shape. Both iOS and Android
+builds are feature-complete and in regression testing. The release introduces a
+redesigned home screen, push notification overhaul, and deep integration with the
+new backend notification service delivered by Backend Engineering last sprint.
+Push notification open rates improved 28% in beta vs. the v4.x baseline.
+
+Accomplishments:
+- iOS and Android feature development 100% complete; both builds in regression
+- All 34 deep link schemas validated
+- Push notification open rates +28% in beta vs. v4.x baseline
+- App binary size reduced 18% (iOS) and 22% (Android) through dependency pruning
+- Crashlytics crash-free session rate at 99.7% in beta (target: 99.5%)
+
+Risks:
+- LOW: App Store review times have historically spiked to 7+ days during Apple
+  policy periods — submitting 10 days early as buffer.
+- LOW: One Android regression in the checkout deep link affects ~2% of entry
+  points; fix in progress, expected resolution by EOW.
+
+Dependencies:
+- Backend Engineering notification service must remain stable in production
+  before mobile launch — currently on track, monitoring closely.
+- Customer Portal Redesign: shared design tokens must be finalized 2 weeks
+  before mobile launch to ensure visual consistency across web and mobile.
+
+Executive decisions needed: None — all open decisions resolved last sprint.
+
+Immediate next steps:
+- Complete regression testing (target: end of Week 2)
+- Fix Android checkout deep link regression
+- Submit iOS build for App Store review in Week 3
+- Finalize launch runbook and rollback plan
+
+Long-term next steps:
+- v5.1 planning: iOS widget support and Android predictive app actions
+- In-app ML-powered search integration (dependent on Recommendation Engine)
+- Expand beta program from 500 to 5,000 users for v5.1 cycle
+
+
+================================================================
+
+## Zero-Trust Security Architecture Rollout
+Status: AT RISK
+Teams: Security Engineering, DevOps & Infrastructure, Backend Engineering
+
+The company-wide Zero-Trust implementation is in Phase 3 of 6 (service-to-service
+mTLS enforcement) and is 3 weeks behind schedule. The delay stems from a
+later-than-expected certificate authority migration and more remediation work than
+anticipated from backend service owners. No executive decision is needed yet, but
+the program will likely slip its year-end completion target if Phase 3 is not
+recovered in the next 2 weeks.
+
+Accomplishments:
+- Phases 1 (identity) and 2 (device trust) complete and stable; 100% of
+  employee devices enrolled
+- mTLS enabled on 31 of 67 target backend services (46%)
+- Internal PKI certificate authority migration completed with zero outages
+- Security posture dashboard live with real-time Zero-Trust compliance coverage
+
+Risks:
+- HIGH: 36 backend services remain on the mTLS rollout. At current velocity
+  Phase 3 completes 4 weeks late, compressing phases 4-6 and threatening the
+  year-end commitment.
+- MEDIUM: 4 legacy services are architecturally incompatible with mTLS and
+  require changes from Backend Engineering that are not yet scoped or scheduled.
+- LOW: External penetration test is scheduled during Phase 4 — if Phase 3 slips,
+  the pentest may need to be rescheduled (vendor availability uncertain).
+
+Dependencies:
+- Backend Engineering owners of the 36 remaining services must allocate capacity
+  for mTLS integration work, currently competing with feature development.
+- DevOps: certificate rotation automation must be deployed before Phase 4 begins.
+- Payment Processing Modernization: new Stripe v3 infrastructure must be
+  Zero-Trust compliant from Day 1; joint design session with DevOps required.
+
+Executive decisions needed:
+- If Phase 3 cannot be recovered before the pentest window: should we reschedule
+  the external pentest (~$45K additional cost) or proceed with incomplete Phase 3
+  coverage and accept a finding? Security Engineering recommends rescheduling.
+
+Immediate next steps:
+- Security Engineering: publish revised Phase 3 schedule with new completion date
+- Backend Engineering: identify service owners and schedule mTLS work for the
+  36 remaining services
+- DevOps: complete certificate rotation automation deployment (currently staging)
+
+Long-term next steps:
+- Phase 4: network micro-segmentation (Q4 target)
+- Phase 5: data access controls and DLP integration
+- Phase 6: continuous compliance monitoring and automated remediation (Q1 2027)
+
+
+================================================================
+
+## Fraud Detection ML Model v2
+Status: ON TRACK
+Teams: Data Science & AI, Security Engineering, Backend Engineering
+
+Fraud Detection v2 has been in full production for 45 days and is performing
+above all baseline targets. The gradient boosting ensemble model with real-time
+feature pipeline has meaningfully improved both catch rates and false positive
+rates. The team is now focused on monitoring, drift detection, and scoping v3.
+
+Accomplishments:
+- Model v2 deployed to 100% of production traffic after 30-day shadow mode
+- False positive rate reduced from 2.3% to 0.9% (target was 1.5%)
+- Fraud catch rate improved from 84% to 91% (target was 88%)
+- Real-time feature pipeline processing 14,000 transactions/second at 22ms P99
+- Estimated $2.1M annualized fraud loss prevention based on first 45 days
+
+Risks:
+- LOW: Model drift monitoring shows early signs of feature distribution shift in
+  international transaction patterns — not yet actionable but being tracked.
+- LOW: Explainability requirements for EU AI Act compliance need to be scoped for
+  v3 — timeline is approximately 12 months out.
+
+Dependencies:
+- Security Engineering: new chargeback data feed integration needed for v3
+  training data (scheduled Q4).
+- Payment Processing team must communicate Stripe v3 transaction event schema
+  changes to Data Science & AI before the Stripe cutover to prevent feature
+  pipeline failures.
+
+Executive decisions needed: None — project is healthy and performing above target.
+
+Immediate next steps:
+- Monitor model performance and drift metrics through Q3
+- Begin v3 scoping: explainability features, international pattern expansion
+- Coordinate with Payment Processing team on Stripe v3 schema impact
+
+Long-term next steps:
+- Fraud Detection v3: graph neural network approach for network-level fraud
+  detection (Q1 2027 target)
+- Expand model coverage to account takeover and promo abuse use cases
+- Evaluate federated learning for privacy-preserving cross-merchant signals
+
+
+================================================================
+
+## Legacy API Decommission
+Status: OFF TRACK
+Teams: Backend Engineering, DevOps & Infrastructure, Frontend Engineering
+
+The v1 Legacy API decommission — planned for this quarter — is effectively paused.
+A traffic analysis revealed 9 undocumented internal API consumers that were missed
+in the original dependency audit, including 3 production-critical systems: the
+billing engine, partner payout service, and internal reporting platform. Two
+third-party partners are also unresponsive to deprecation notices and still
+calling the v1 API at 40K requests/day. The project cannot proceed until these
+are resolved and leadership provides direction on the partner situation.
+
+Accomplishments:
+- v2 migration complete for 14 of 17 originally documented API consumers
+- API gateway migration complete for all documented consumers
+- Deprecation notices sent to all 8 known third-party partners (6 confirmed,
+  2 unresponsive)
+
+Risks:
+- CRITICAL: 9 undocumented internal consumers discovered via traffic analysis —
+  3 are production-critical (billing engine, partner payout, internal reporting).
+  These were not budgeted or scheduled and block any cutover.
+- HIGH: 2 unresponsive third-party partners still calling v1 at 40K req/day.
+  Forced cutover without their cooperation would break their integrations.
+- HIGH: Keeping v1 infrastructure running costs approximately $8K/month in
+  unnecessary cloud spend while the project is stalled.
+
+Dependencies:
+- Billing Engine team (Backend Engineering): must migrate off v1 before
+  decommission; timeline unknown, engagement not yet started.
+- Partner Payout Service team: v2 migration estimate still pending.
+- Commercial and Legal teams must engage with the 2 unresponsive third-party
+  partners before a cutover date can be set.
+
+Executive decisions needed:
+- URGENT: How do we handle the 2 unresponsive third-party partners? Options:
+  (1) Set a hard contractual cutover date and accept potential partner disruption,
+  (2) Build a v1-compatibility shim in the v2 gateway (3-4 weeks of engineering),
+  or (3) Delay decommission indefinitely. This requires a commercial and legal
+  decision that engineering cannot make unilaterally.
+- Should we expand project scope and budget to cover migration of the 3
+  production-critical undocumented consumers? No capacity exists in the current
+  plan.
+
+Immediate next steps:
+- Backend Engineering: engage billing engine and partner payout service teams
+  immediately to begin migration scoping
+- Commercial/Legal: initiate outreach to 2 unresponsive partners this week
+- DevOps: quantify monthly cost of maintaining v1 infrastructure for reporting
+
+Long-term next steps:
+- Once all consumers are migrated: execute controlled v1 traffic cutover
+- Decommission v1 infrastructure and recapture $8K/month cloud savings
+- Implement API consumer registry to prevent undocumented dependency recurrence
+
+
+================================================================
+
+## Data Lakehouse Migration
+Status: AT RISK
+Teams: Data Science & AI, DevOps & Infrastructure
+
+Migration from Redshift to a Delta Lake on S3 + Databricks architecture is 60%
+complete but tracking 6 weeks behind schedule. Primary blockers are ETL pipeline
+complexity (higher than estimated), a delayed Databricks professional services
+engagement, and an unplanned schema normalization effort uncovered during data
+profiling. The team has de-prioritized 4 non-critical data marts to protect core
+analytics use cases — but 3 of those deferred data marts support Finance's
+month-end close process, which needs a cross-functional decision.
+
+Accomplishments:
+- Core transactional data (orders, users, payments) migrated and validated —
+  3.2TB migrated with under 0.01% data loss
+- Databricks environment provisioned; compute costs optimized 28% vs. initial
+  configuration
+- 18 of 34 ETL pipelines rewritten and deployed; average runtime 2.1x faster
+  than Redshift equivalents
+- Data quality framework deployed with automated anomaly detection on 14 tables
+
+Risks:
+- HIGH: 16 ETL pipelines remain, including 5 highly complex ones with 400+ line
+  custom SQL transforms. These 5 may take as long as the previous 18 combined.
+- MEDIUM: Databricks PS engagement started 4 weeks late due to vendor resource
+  constraints — the team has been navigating the hardest migrations without
+  expert support.
+- MEDIUM: 3 Finance month-end close data marts are in the deferred scope.
+  Finance will need a manual workaround for September and October close if
+  the deferral is maintained.
+- LOW: Redshift contract renewal is in 8 weeks. If migration is not complete,
+  a renewal decision is required (~$120K/year vs. completing the migration).
+
+Dependencies:
+- Finance team must be notified this week about the month-end data mart deferral
+  and make a decision on manual workaround procedures.
+- Databricks PS team availability confirmed for the 5 complex ETL pipelines
+  starting next week.
+- DevOps: storage tiering policy for Delta Lake cold storage needed before the
+  historical data migration phase begins in Week 8.
+
+Executive decisions needed:
+- Should the 3 Finance month-end data marts be re-prioritized into scope
+  (extending the timeline further) or should Finance accept a manual workaround
+  for 2 months? Requires cross-functional decision between Finance, Data Science,
+  and business leadership.
+- Redshift contract: renew short-term (6 months, ~$60K) or accept the risk of
+  running past the contract expiration with no renewal?
+
+Immediate next steps:
+- Data Science & AI: complexity assessment for the 5 complex pipelines with
+  Databricks PS team
+- DevOps: finalize storage tiering policy design
+- Schedule Finance stakeholder meeting on data mart deferral this week
+
+Long-term next steps:
+- Complete all 34 ETL pipelines (revised target: Week 14)
+- Decommission Redshift post-migration
+- Enable self-serve analytics via Databricks SQL for business teams (Q4)
+- Real-time streaming ingestion via Delta Live Tables (2026 roadmap)
+
+
+================================================================
+
+## CI/CD Platform Overhaul
+Status: ON TRACK
+Teams: DevOps & Infrastructure, Frontend Engineering, Backend Engineering,
+       Mobile Engineering, Data Science & AI
+
+Migration from Jenkins to GitHub Actions + ArgoCD is ahead of schedule. DevOps
+completed the toolchain migration for all engineering teams and is in the final
+phase of pipeline optimization and observability integration. Jenkins has been
+fully decommissioned, saving $22K/month in infrastructure costs.
+
+Accomplishments:
+- 100% of engineering teams migrated from Jenkins to GitHub Actions
+- Jenkins infrastructure decommissioned; $22K/month in cloud costs eliminated
+- Average build time reduced from 18 minutes to 6 minutes across all pipelines
+- ArgoCD GitOps deployment live for all production services; deployment frequency
+  up 3x
+- SAST and dependency vulnerability scanning integrated into all pipelines by
+  default
+
+Risks:
+- LOW: 2 legacy Data Science & AI training pipelines still use a
+  Jenkins-compatible shell script approach; need refactoring for full GitHub
+  Actions compatibility. Scheduled for next sprint.
+- LOW: ArgoCD dashboard access controls are currently too permissive; Security
+  Engineering RBAC review scheduled.
+
+Dependencies:
+- Security Engineering: RBAC review of ArgoCD configuration needed before
+  Phase 3 sign-off.
+- All engineering teams must adopt standardized pipeline templates by end of
+  quarter; currently at 87% adoption across teams.
+
+Executive decisions needed: None — project ahead of schedule.
+
+Immediate next steps:
+- Migrate 2 remaining Data Science & AI training pipelines to GitHub Actions
+- Complete Security Engineering RBAC review for ArgoCD
+- Drive remaining 13% pipeline template adoption
+
+Long-term next steps:
+- Phase 4: DORA metrics dashboard and deployment analytics
+- Evaluate GitHub Actions self-hosted runners for GPU workloads (relevant to
+  ML model training pipelines)
+- Automated SLO-based rollback triggers (Q4 target)
+
+
+================================================================
+
+## NLP Customer Support Automation
+Status: OFF TRACK
+Teams: Data Science & AI, Frontend Engineering, Backend Engineering
+
+The NLP-powered support automation project — targeting 40% deflection of tier-1
+support tickets using a fine-tuned LLM — is significantly behind schedule and
+facing model quality issues that are not yet resolved. A stakeholder review 2
+weeks ago surfaced a misalignment between the technical approach and the Customer
+Support organization's operational requirements, requiring a partial re-scope.
+An executive decision on path forward is needed urgently given the Q3 board
+commitment.
+
+Accomplishments:
+- Fine-tuned LLM achieving 71% intent classification accuracy on held-out test
+  set (target threshold: 88%)
+- Support ticket ingestion pipeline processing 100% of incoming tickets in real-
+  time
+- Human-in-the-loop review UI built and delivered by Frontend Engineering; pilot
+  support agents onboarded
+- 1,200 tickets manually labeled for training (significant effort from the
+  support team)
+
+Risks:
+- CRITICAL: 71% intent accuracy is well below the 88% minimum required by the
+  Customer Support team for any production deployment. The model is not currently
+  fit for purpose, and the gap is not trivial.
+- HIGH: The re-scope required to close the accuracy gap adds approximately 8
+  weeks of work, but the Q3 go-live was committed to the board. The team cannot
+  hit both the quality bar and the timeline.
+- HIGH: Support team staff have expressed concern about being given an unreliable
+  automation tool. Change management and morale risk if a low-quality model ships.
+- MEDIUM: Zendesk integration required for production deployment has not been
+  scoped by Backend Engineering — estimated 3-4 weeks of additional work.
+
+Dependencies:
+- Customer Support organization: 3,000 additional labeled training examples
+  requested; support team capacity is constrained and cannot absorb this quickly.
+- Backend Engineering: Zendesk integration unscoped and unscheduled; blocks
+  production deployment path entirely.
+- Frontend Engineering: UI revision requests received from pilot agents; not yet
+  prioritized or scheduled.
+
+Executive decisions needed:
+- CRITICAL: The project cannot meet both the Q3 deadline and the 88% accuracy
+  requirement. Leadership must choose: (1) Deploy in Q3 at 71-75% accuracy and
+  accept operational risk and potential staff backlash, (2) Push to Q4 with full
+  re-scope and accuracy target, or (3) Descope to a simpler intent-routing system
+  (not generative) that can hit 88%+ accuracy and the Q3 timeline but achieves
+  roughly 25% deflection rather than 40%. Team recommends option 2 or 3.
+- Should we contract an external labeling service ($15-20K) to accelerate the
+  training data bottleneck, or continue relying on the support team?
+
+Immediate next steps:
+- Data Science & AI: present 3 technical path options with accuracy projections
+  and timelines to leadership by end of week
+- Backend Engineering: scope the Zendesk integration
+- Frontend Engineering: triage and prioritize UI change requests from pilot agents
+- Schedule executive decision meeting this week — cannot wait
+
+Long-term next steps:
+- If option 2 (Q4, full scope): re-baseline project plan with updated milestones
+- If option 3 (intent routing): define v2 roadmap for generative capabilities
+- Multilingual support (Spanish, French) on long-term roadmap, pending base
+  model performance
+- Establish continuous model evaluation pipeline and accuracy benchmarking suite
