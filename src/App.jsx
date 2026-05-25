@@ -19,25 +19,37 @@ export default function App() {
     setError(null)
     setView(VIEW.LOADING)
 
+    let res
     try {
-      const res = await fetch('/api/analyze', {
+      res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectData }),
       })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || `Server error (${res.status})`)
-      }
-
-      setDashboardData(data)
-      setView(VIEW.DASHBOARD)
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred.')
+      setError(`Network error — could not reach the API. Make sure vercel dev is running. (${err.message})`)
       setView(VIEW.INPUT)
+      return
     }
+
+    let data
+    try {
+      data = await res.json()
+    } catch {
+      const preview = await res.text().catch(() => '')
+      setError(`The server returned a non-JSON response (HTTP ${res.status}). The /api/analyze route may not be running. Response preview: ${preview.slice(0, 120)}`)
+      setView(VIEW.INPUT)
+      return
+    }
+
+    if (!res.ok) {
+      setError(data.error || `Server error (${res.status})`)
+      setView(VIEW.INPUT)
+      return
+    }
+
+    setDashboardData(data)
+    setView(VIEW.DASHBOARD)
   }
 
   function handleReset() {
