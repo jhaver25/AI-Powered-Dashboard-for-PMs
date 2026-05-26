@@ -23,7 +23,7 @@ export default function App() {
     setView(VIEW.LOADING)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 90_000)
+    const timeoutId = setTimeout(() => controller.abort(), 180_000)
 
     let res
     try {
@@ -36,7 +36,7 @@ export default function App() {
     } catch (err) {
       clearTimeout(timeoutId)
       if (err.name === 'AbortError') {
-        setError('The request timed out after 90 seconds. Please try again — the AI may be under high load.')
+        setError('The request timed out after 180 seconds. Please try again — the AI may be under high load.')
       } else {
         const devHint = import.meta.env.DEV ? ` Make sure vercel dev is running. (${err.message})` : ''
         setError(`Network error — could not reach the API.${devHint}`)

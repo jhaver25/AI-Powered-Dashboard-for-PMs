@@ -235,9 +235,9 @@ sample_status_notes.txt   Example input covering nine projects across an enginee
 |---|---|
 | Maximum input size | 50,000 characters |
 | Soft warning threshold | 40,000 characters |
-| Request timeout | 90 seconds |
+| Request timeout | 180 seconds |
 | Run history depth | 4 snapshots (browser localStorage) |
-| AI model max output | 8,096 tokens |
+| AI model max output | 16,000 tokens |
 
 If the input does not contain recognizable project status information (e.g., random text or a test message), the API returns a validation error and prompts the user to provide project data.
 

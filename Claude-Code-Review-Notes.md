@@ -136,10 +136,10 @@ export default function InputSection({ onSubmit, error, text, onTextChange }) {
 **Files:** `src/App.jsx`, `src/components/LoadingIndicator.jsx`, `src/components/LoadingIndicator.css`
 
 ### Description
-Wrap the `fetch` call in `App.jsx` with an `AbortController` set to 90 seconds. On timeout, display a specific user-facing message. Update `LoadingIndicator` to show an elapsed-time counter after 20 seconds so users know the request is still live.
+Wrap the `fetch` call in `App.jsx` with an `AbortController` set to 180 seconds. On timeout, display a specific user-facing message. Update `LoadingIndicator` to show an elapsed-time counter after 20 seconds so users know the request is still live.
 
 ### Justification
-A hung or slow API call currently produces an infinite spinner with no feedback or escape hatch. For executives sharing a screen in a meeting, this is a silent failure that erodes trust. 90 seconds covers slow Claude responses; the 20-second elapsed counter provides reassurance during normal operation.
+A hung or slow API call currently produces an infinite spinner with no feedback or escape hatch. For executives sharing a screen in a meeting, this is a silent failure that erodes trust. 180 seconds covers slow Claude responses under heavy load (increased from an initial 90s to better support local development environments); the 20-second elapsed counter provides reassurance during normal operation.
 
 ---
 
@@ -164,7 +164,7 @@ A hung or slow API call currently produces an infinite spinner with no feedback 
 **After:**
 ```jsx
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 90000)
+    const timeoutId = setTimeout(() => controller.abort(), 180000)
 
     let res
     try {
@@ -176,7 +176,7 @@ A hung or slow API call currently produces an infinite spinner with no feedback 
       })
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('The analysis timed out after 90 seconds — the AI service may be under heavy load. Please try again in a moment.')
+        setError('The analysis timed out after 180 seconds — the AI service may be under heavy load. Please try again in a moment.')
       } else {
         setError(`Network error — could not reach the analysis service. (${err.message})`)
       }
@@ -255,7 +255,7 @@ export default function LoadingIndicator() {
         </p>
         {elapsed >= 20 && (
           <p className="loading__elapsed" role="status">
-            Still working… {elapsed}s elapsed (timeout at 90s)
+            Still working… {elapsed}s elapsed (timeout at 180s)
           </p>
         )}
         <div className="loading__steps" aria-label="Processing steps">

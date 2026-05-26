@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const SYSTEM_PROMPT = `You are an expert program manager analyst supporting C-level executive briefings. Analyze project status information and extract structured data for an executive dashboard.
+// Extracts per-project data only. Kept focused so the response stays small and fast.
+const SYSTEM_PROMPT_PROJECTS = `You are an expert program manager analyst supporting C-level executive briefings. Analyze project status information and extract per-project structured data.
 
 Return ONLY a valid JSON object — no markdown, no code fences, no explanatory text. Raw JSON only.
 
@@ -22,7 +23,23 @@ Return this exact JSON structure:
       "immediateNextSteps": [{ "action": "<action item due within ~2 weeks>", "suggestedOwner": "<team or role, or null>" }],
       "longTermNextSteps": [{ "action": "<action item or milestone beyond ~2 weeks>", "suggestedOwner": "<team or role, or null>" }]
     }
-  ],
+  ]
+}
+
+Rules:
+- Extract all projects mentioned, even if status information is minimal
+- Infer RAG status from context if not stated explicitly
+- If a section has no data, return an empty array
+- If a project has conflicting status signals, assign the more severe RAG status and note the conflict in statusSummary
+- If the input does not contain recognizable project status information (e.g., it is a test message, random text, or completely unrelated to projects or work), return ONLY: {"inputError": "<brief explanation>"}`;
+
+// Extracts portfolio-level aggregates only. Runs in parallel with the projects call.
+const SYSTEM_PROMPT_CROSS = `You are an expert program manager analyst supporting C-level executive briefings. Analyze project status information and extract cross-project risks, decisions required from leadership, and inter-team dependencies.
+
+Return ONLY a valid JSON object — no markdown, no code fences, no explanatory text. Raw JSON only.
+
+Return this exact JSON structure:
+{
   "keyRisks": [
     {
       "id": "<kebab-case-slug>",
@@ -54,13 +71,21 @@ Return this exact JSON structure:
 }
 
 Rules:
-- Extract all projects mentioned, even if status information is minimal
-- Infer RAG status from context if not stated explicitly
 - Cross-project risks and dependencies should each appear once, with all affected projects listed
 - If a section has no data, return an empty array
 - Be thorough — executives rely on completeness
-- If a project has conflicting status signals (e.g., one section says "on track" but another describes a critical blocker), assign the more severe RAG status and note the conflict in statusSummary
-- If the input does not contain recognizable project status information (e.g., it is a test message, random text, or completely unrelated to projects or work), return ONLY: {"inputError": "<brief explanation>"}`;
+- If the input does not contain recognizable project status information, return ONLY: {"inputError": "<brief explanation>"}`;
+
+function parseJSON(rawText) {
+  const trimmed = rawText.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const match = trimmed.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('No valid JSON found in response');
+  }
+}
 
 export default async function handler(req, res) {
   const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
@@ -98,48 +123,53 @@ export default async function handler(req, res) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8096,
-      system: [
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [
-        {
-          role: 'user',
-          content: `Today's date: ${new Date().toISOString().split('T')[0]}\n\nAnalyze the following project status information and return the structured JSON dashboard data:\n\n---\n${projectData}\n---`,
-        },
-      ],
-    });
+    const userMessage = `Today's date: ${new Date().toISOString().split('T')[0]}\n\nAnalyze the following project status information and return the structured JSON data:\n\n---\n${projectData}\n---`;
 
-    const rawText = response.content[0].text.trim();
+    // Run both extractions in parallel — projects and cross-project data are independent.
+    const [projectsRes, crossRes] = await Promise.all([
+      client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 10000,
+        system: [{ type: 'text', text: SYSTEM_PROMPT_PROJECTS, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+      client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 10000,
+        system: [{ type: 'text', text: SYSTEM_PROMPT_CROSS, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    ]);
 
-    let parsed;
+    let projectsParsed, crossParsed;
+
     try {
-      parsed = JSON.parse(rawText);
+      projectsParsed = parseJSON(projectsRes.content[0].text);
     } catch {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-      } else {
-        return res.status(422).json({
-          error: 'Could not parse a valid JSON response from the AI model.',
-          raw: rawText.slice(0, 500),
-        });
-      }
+      console.error('Projects parse failure. Raw response:\n', projectsRes.content[0].text.slice(0, 1000));
+      return res.status(422).json({ error: 'Could not parse a valid JSON response from the AI model (projects).' });
     }
 
-    if (parsed.inputError) {
-      return res.status(422).json({ error: `Input not recognized as project status data: ${parsed.inputError}` });
+    try {
+      crossParsed = parseJSON(crossRes.content[0].text);
+    } catch {
+      console.error('Cross-project parse failure. Raw response:\n', crossRes.content[0].text.slice(0, 1000));
+      return res.status(422).json({ error: 'Could not parse a valid JSON response from the AI model (risks/decisions).' });
     }
 
-    parsed.generatedAt = new Date().toISOString();
+    if (projectsParsed.inputError) {
+      return res.status(422).json({ error: `Input not recognized as project status data: ${projectsParsed.inputError}` });
+    }
 
-    return res.status(200).json(parsed);
+    const merged = {
+      projects: projectsParsed.projects || [],
+      keyRisks: crossParsed.keyRisks || [],
+      executiveDecisions: crossParsed.executiveDecisions || [],
+      keyDependencies: crossParsed.keyDependencies || [],
+      generatedAt: new Date().toISOString(),
+    };
+
+    return res.status(200).json(merged);
   } catch (err) {
     console.error('Anthropic API error:', err);
     if (err instanceof Anthropic.AuthenticationError) {
