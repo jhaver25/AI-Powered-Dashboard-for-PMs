@@ -1,4 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+// Instantiated once per warm instance. Skipped entirely when Upstash is not configured
+// (local dev). Change the first argument to adjust the daily request cap per IP.
+const ratelimit = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.fixedWindow(25, '1 d'),
+      prefix: 'exec-dashboard',
+    })
+  : null;
 
 // Extracts per-project data only. Kept focused so the response stays small and fast.
 const SYSTEM_PROMPT_PROJECTS = `You are an expert program manager analyst supporting C-level executive briefings. Analyze project status information and extract per-project structured data.
@@ -118,6 +130,17 @@ export default async function handler(req, res) {
 
   if (projectData.length > 50_000) {
     return res.status(400).json({ error: `Input exceeds the 50,000-character limit (${projectData.length.toLocaleString()} characters). Please reduce the text and try again.` });
+  }
+
+  if (ratelimit) {
+    const ip = ((req.headers['x-forwarded-for'] ?? '') + '').split(',')[0].trim() || 'unknown';
+    const { success, limit, reset } = await ratelimit.limit(ip);
+    if (!success) {
+      const resetAt = new Date(reset).toUTCString();
+      return res.status(429).json({
+        error: `Daily analysis limit reached (${limit} per day). Your limit resets at ${resetAt}.`,
+      });
+    }
   }
 
   try {
