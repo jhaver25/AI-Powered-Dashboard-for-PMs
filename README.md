@@ -1,4 +1,4 @@
-# Executive Project Dashboard
+# AI-Powered Executive Project Dashboard
 
 An AI-powered web application that transforms unstructured project status notes into a structured executive briefing. Paste raw meeting notes, status updates, or any free-form project text — the app uses Claude AI to extract and organize the information into a portfolio-level dashboard for C-level stakeholders.
 
