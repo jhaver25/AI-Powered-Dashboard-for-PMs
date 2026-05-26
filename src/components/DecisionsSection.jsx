@@ -1,7 +1,24 @@
 import '../App.css'
 import './TableSection.css'
 
+const URGENCY_ORDER = { high: 0, medium: 1, low: 2 }
+const URGENCY_LABEL = { high: 'High Urgency', medium: 'Medium Urgency', low: 'Low Urgency' }
+
 export default function DecisionsSection({ decisions = [] }) {
+  const sorted = [...decisions].sort(
+    (a, b) => (URGENCY_ORDER[a.urgency] ?? 3) - (URGENCY_ORDER[b.urgency] ?? 3)
+  )
+
+  const rows = []
+  let lastUrgency = null
+  for (const dec of sorted) {
+    if (dec.urgency !== lastUrgency) {
+      rows.push({ type: 'divider', urgency: dec.urgency })
+      lastUrgency = dec.urgency
+    }
+    rows.push({ type: 'row', dec })
+  }
+
   return (
     <section className="table-section card table-section--decisions" aria-labelledby="decisions-heading">
       <div className="table-section__header">
@@ -29,30 +46,48 @@ export default function DecisionsSection({ decisions = [] }) {
                 <th>Decision Needed</th>
                 <th>Affected Projects</th>
                 <th>Urgency</th>
+                <th>Suggested Owner</th>
                 <th>Context</th>
               </tr>
             </thead>
             <tbody>
-              {decisions.map((dec) => (
-                <tr key={dec.id}>
-                  <td className="data-table__primary">{dec.description}</td>
-                  <td>
-                    <div className="tag-group">
-                      {(dec.affectedProjects || []).map((p, i) => (
-                        <span key={i} className="project-tag">{p}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`pill pill--${dec.urgency}`}>
-                      {dec.urgency}
-                    </span>
-                  </td>
-                  <td className="data-table__note">
-                    {dec.context || <span className="text-muted">—</span>}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((item, i) => {
+                if (item.type === 'divider') {
+                  return (
+                    <tr key={`divider-${item.urgency}`} className="data-table__divider-row">
+                      <td colSpan={5}>
+                        <span className={`pill pill--${item.urgency}`}>
+                          {URGENCY_LABEL[item.urgency]}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                }
+                const { dec } = item
+                return (
+                  <tr key={dec.id}>
+                    <td className="data-table__primary">{dec.description}</td>
+                    <td>
+                      <div className="tag-group">
+                        {(dec.affectedProjects || []).map((p, j) => (
+                          <span key={j} className="project-tag">{p}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`pill pill--${dec.urgency}`}>
+                        {dec.urgency}
+                      </span>
+                    </td>
+                    <td className="data-table__note">
+                      {dec.suggestedOwner || <span className="text-muted">—</span>}
+                    </td>
+                    <td className="data-table__note">
+                      {dec.context || <span className="text-muted">—</span>}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

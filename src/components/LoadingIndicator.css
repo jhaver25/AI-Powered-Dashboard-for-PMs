@@ -42,7 +42,31 @@
   font-size: 0.875rem;
   color: var(--gray-500);
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+
+.loading__elapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.loading__elapsed-time {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gray-400);
+}
+
+.loading__elapsed-time--slow {
+  color: var(--amber, #f59e0b);
+}
+
+.loading__slow-note {
+  font-size: 0.8125rem;
+  color: var(--amber, #f59e0b);
 }
 
 .loading__steps {

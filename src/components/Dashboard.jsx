@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import ProjectCard from './ProjectCard'
 import RisksSection from './RisksSection'
 import DecisionsSection from './DecisionsSection'
 import DependenciesSection from './DependenciesSection'
+import { downloadMarkdown } from '../utils/exportMarkdown'
 import '../App.css'
 import './Dashboard.css'
 
@@ -26,7 +28,9 @@ function StatCard({ count, label, variant }) {
   )
 }
 
-export default function Dashboard({ data, onReset }) {
+export default function Dashboard({ data, trends = {}, onReset }) {
+  const [ragFilter, setRagFilter] = useState('all')
+
   const {
     projects = [],
     keyRisks = [],
@@ -41,6 +45,8 @@ export default function Dashboard({ data, onReset }) {
   const highRisks   = keyRisks.filter(r => r.severity === 'high').length
   const highDecisions = executiveDecisions.filter(d => d.urgency === 'high').length
 
+  const visibleProjects = ragFilter === 'all' ? projects : projects.filter(p => p.ragStatus === ragFilter)
+
   return (
     <div className="dashboard">
       {/* ── Summary bar ── */}
@@ -52,6 +58,7 @@ export default function Dashboard({ data, onReset }) {
           </h2>
           <p className="dashboard__generated">Generated {formatTimestamp(generatedAt)}</p>
         </div>
+        <div className="dashboard__summary-right">
         <div className="dashboard__stats">
           <StatCard count={greenCount}  label="On Track"  variant="green" />
           <StatCard count={amberCount}  label="At Risk"   variant="amber" />
@@ -62,6 +69,13 @@ export default function Dashboard({ data, onReset }) {
           {highDecisions > 0 && (
             <StatCard count={highDecisions} label="Urgent Decisions" variant="decision" />
           )}
+        </div>
+        <button className="btn btn--ghost dashboard__export-btn" onClick={() => downloadMarkdown(data)}>
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+          Export Markdown
+        </button>
         </div>
       </div>
 
@@ -81,17 +95,43 @@ export default function Dashboard({ data, onReset }) {
       {/* ── Projects grid ── */}
       {projects.length > 0 ? (
         <section className="dashboard__section" aria-labelledby="projects-heading">
-          <h2 className="section-heading" id="projects-heading">
-            <svg className="section-heading__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-            </svg>
-            Projects
-          </h2>
-          <div className="dashboard__projects-grid">
-            {projects.map(project => (
-              <ProjectCard key={project.id || project.name} project={project} />
-            ))}
+          <div className="dashboard__projects-header">
+            <h2 className="section-heading" id="projects-heading">
+              <svg className="section-heading__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+              </svg>
+              Projects
+            </h2>
+            <div className="dashboard__filter-bar" role="group" aria-label="Filter projects by status">
+              {[
+                { key: 'all',   label: 'All', count: projects.length },
+                { key: 'red',   label: 'Off Track', count: redCount },
+                { key: 'amber', label: 'At Risk',   count: amberCount },
+                { key: 'green', label: 'On Track',  count: greenCount },
+              ].map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  className={`filter-btn filter-btn--${key}${ragFilter === key ? ' filter-btn--active' : ''}`}
+                  onClick={() => setRagFilter(key)}
+                  aria-pressed={ragFilter === key}
+                >
+                  {label}
+                  <span className="filter-btn__count">{count}</span>
+                </button>
+              ))}
+            </div>
           </div>
+          {visibleProjects.length > 0 ? (
+            <div className="dashboard__projects-grid">
+              {visibleProjects.map(project => (
+                <ProjectCard key={project.id || project.name} project={project} trend={trends[project.id]} />
+              ))}
+            </div>
+          ) : (
+            <div className="card empty-state" style={{ padding: '2rem' }}>
+              No {ragFilter} projects in this portfolio.
+            </div>
+          )}
         </section>
       ) : (
         <div className="card empty-state" style={{ padding: '2.5rem' }}>

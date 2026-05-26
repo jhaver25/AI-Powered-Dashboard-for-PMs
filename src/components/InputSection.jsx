@@ -24,8 +24,7 @@ Next steps (immediate): Complete checkout flow design review by June 2.
 Next steps (long-term): Load testing and penetration test before August launch.
 ---`
 
-export default function InputSection({ onSubmit, error }) {
-  const [text, setText] = useState('')
+export default function InputSection({ onSubmit, error, text, onTextChange }) {
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e) {
@@ -36,7 +35,13 @@ export default function InputSection({ onSubmit, error }) {
     setSubmitting(false)
   }
 
+  const HARD_LIMIT = 50_000
+  const SOFT_LIMIT = 40_000
   const charCount = text.length
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+  const tooShort = wordCount > 0 && wordCount < 100
+  const nearLimit = charCount >= SOFT_LIMIT && charCount < HARD_LIMIT
+  const overLimit = charCount >= HARD_LIMIT
 
   return (
     <div className="input-section">
@@ -66,27 +71,42 @@ export default function InputSection({ onSubmit, error }) {
             id="project-data"
             className="input-section__textarea"
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={e => onTextChange(e.target.value)}
             placeholder={PLACEHOLDER}
             rows={18}
             disabled={submitting}
             aria-describedby="char-count"
           />
           <div className="input-section__meta" id="char-count">
-            <span className="text-xs text-muted">
-              {charCount > 0 ? `${charCount.toLocaleString()} characters` : 'No input yet'}
+            <span className={`text-xs ${overLimit ? 'input-section__char-count--over' : nearLimit ? 'input-section__char-count--near' : 'text-muted'}`}>
+              {charCount > 0 ? `${charCount.toLocaleString()} / ${HARD_LIMIT.toLocaleString()} characters · ${wordCount.toLocaleString()} words` : 'No input yet'}
             </span>
             <span className="text-xs text-muted">
               Supports plain text, Markdown, or any structured format
             </span>
           </div>
+          {tooShort && !overLimit && (
+            <p className="input-section__warning" role="alert">
+              Input seems short ({wordCount} words). For a useful dashboard, include project names, status, teams, risks, and next steps — at least a few sentences per project.
+            </p>
+          )}
+          {nearLimit && (
+            <p className="input-section__warning" role="alert">
+              Approaching the 50,000-character limit ({charCount.toLocaleString()} characters). Consider trimming older or less relevant content.
+            </p>
+          )}
+          {overLimit && (
+            <p className="input-section__warning input-section__warning--error" role="alert">
+              Input exceeds the 50,000-character limit ({charCount.toLocaleString()} characters). Please reduce the text before submitting.
+            </p>
+          )}
         </div>
 
         <div className="input-section__actions">
           <button
             type="submit"
             className="btn btn--primary btn--lg"
-            disabled={submitting || !text.trim()}
+            disabled={submitting || !text.trim() || overLimit}
           >
             {submitting ? 'Analyzing…' : (
               <>

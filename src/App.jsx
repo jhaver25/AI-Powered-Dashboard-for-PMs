@@ -2,6 +2,7 @@ import { useState } from 'react'
 import InputSection from './components/InputSection'
 import LoadingIndicator from './components/LoadingIndicator'
 import Dashboard from './components/Dashboard'
+import { saveSnapshot, getTrends } from './utils/history'
 import './App.css'
 
 const VIEW = {
@@ -12,12 +13,17 @@ const VIEW = {
 
 export default function App() {
   const [view, setView] = useState(VIEW.INPUT)
+  const [inputText, setInputText] = useState('')
   const [dashboardData, setDashboardData] = useState(null)
+  const [trends, setTrends] = useState({})
   const [error, setError] = useState(null)
 
   async function handleSubmit(projectData) {
     setError(null)
     setView(VIEW.LOADING)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 90_000)
 
     let res
     try {
@@ -25,19 +31,30 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectData }),
+        signal: controller.signal,
       })
     } catch (err) {
-      setError(`Network error — could not reach the API. Make sure vercel dev is running. (${err.message})`)
+      clearTimeout(timeoutId)
+      if (err.name === 'AbortError') {
+        setError('The request timed out after 90 seconds. Please try again — the AI may be under high load.')
+      } else {
+        const devHint = import.meta.env.DEV ? ` Make sure vercel dev is running. (${err.message})` : ''
+        setError(`Network error — could not reach the API.${devHint}`)
+      }
       setView(VIEW.INPUT)
       return
     }
+    clearTimeout(timeoutId)
 
     let data
     try {
       data = await res.json()
     } catch {
       const preview = await res.text().catch(() => '')
-      setError(`The server returned a non-JSON response (HTTP ${res.status}). The /api/analyze route may not be running. Response preview: ${preview.slice(0, 120)}`)
+      const devHint = import.meta.env.DEV
+        ? ` The /api/analyze route may not be running. Response preview: ${preview.slice(0, 120)}`
+        : ''
+      setError(`The server returned an unexpected response (HTTP ${res.status}).${devHint}`)
       setView(VIEW.INPUT)
       return
     }
@@ -48,13 +65,17 @@ export default function App() {
       return
     }
 
+    const history = saveSnapshot(data)
+    setTrends(getTrends(history, data.projects))
     setDashboardData(data)
     setView(VIEW.DASHBOARD)
   }
 
   function handleReset() {
     setDashboardData(null)
+    setTrends({})
     setError(null)
+    setInputText('')
     setView(VIEW.INPUT)
   }
 
@@ -88,11 +109,11 @@ export default function App() {
       <main className="app-main">
         <div className="container">
           {view === VIEW.INPUT && (
-            <InputSection onSubmit={handleSubmit} error={error} />
+            <InputSection onSubmit={handleSubmit} error={error} text={inputText} onTextChange={setInputText} />
           )}
           {view === VIEW.LOADING && <LoadingIndicator />}
           {view === VIEW.DASHBOARD && dashboardData && (
-            <Dashboard data={dashboardData} onReset={handleReset} />
+            <Dashboard data={dashboardData} trends={trends} onReset={handleReset} />
           )}
         </div>
       </main>

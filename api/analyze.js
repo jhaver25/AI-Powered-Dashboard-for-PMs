@@ -19,8 +19,8 @@ Return this exact JSON structure:
       "statusSummary": "<single concise sentence summarizing overall project status>",
       "teams": ["<team name>"],
       "accomplishments": ["<key accomplishment>"],
-      "immediateNextSteps": ["<action item due within ~2 weeks>"],
-      "longTermNextSteps": ["<action item or milestone beyond ~2 weeks>"]
+      "immediateNextSteps": [{ "action": "<action item due within ~2 weeks>", "suggestedOwner": "<team or role, or null>" }],
+      "longTermNextSteps": [{ "action": "<action item or milestone beyond ~2 weeks>", "suggestedOwner": "<team or role, or null>" }]
     }
   ],
   "keyRisks": [
@@ -38,6 +38,7 @@ Return this exact JSON structure:
       "description": "<decision needed from leadership>",
       "affectedProjects": ["<project name>"],
       "urgency": "high" | "medium" | "low",
+      "suggestedOwner": "<role or team best positioned to own this decision, or null>",
       "context": "<additional context to inform the decision>"
     }
   ],
@@ -57,10 +58,18 @@ Rules:
 - Infer RAG status from context if not stated explicitly
 - Cross-project risks and dependencies should each appear once, with all affected projects listed
 - If a section has no data, return an empty array
-- Be thorough — executives rely on completeness`;
+- Be thorough — executives rely on completeness
+- If a project has conflicting status signals (e.g., one section says "on track" but another describes a critical blocker), assign the more severe RAG status and note the conflict in statusSummary
+- If the input does not contain recognizable project status information (e.g., it is a test message, random text, or completely unrelated to projects or work), return ONLY: {"inputError": "<brief explanation>"}`;
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
+  const requestOrigin = req.headers.origin || '';
+  if (allowedOrigin && requestOrigin === allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  } else if (!allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -80,6 +89,10 @@ export default async function handler(req, res) {
 
   if (!projectData || projectData.trim().length === 0) {
     return res.status(400).json({ error: 'No project data provided.' });
+  }
+
+  if (projectData.length > 50_000) {
+    return res.status(400).json({ error: `Input exceeds the 50,000-character limit (${projectData.length.toLocaleString()} characters). Please reduce the text and try again.` });
   }
 
   try {
@@ -120,11 +133,24 @@ export default async function handler(req, res) {
       }
     }
 
+    if (parsed.inputError) {
+      return res.status(422).json({ error: `Input not recognized as project status data: ${parsed.inputError}` });
+    }
+
     parsed.generatedAt = new Date().toISOString();
 
     return res.status(200).json(parsed);
   } catch (err) {
     console.error('Anthropic API error:', err);
+    if (err instanceof Anthropic.AuthenticationError) {
+      return res.status(502).json({ error: 'API key is invalid or missing. Check that ANTHROPIC_API_KEY is correctly set on the server.' });
+    }
+    if (err instanceof Anthropic.RateLimitError) {
+      return res.status(502).json({ error: 'Anthropic rate limit reached. Please wait a moment and try again.' });
+    }
+    if (err instanceof Anthropic.APIConnectionError) {
+      return res.status(502).json({ error: 'Could not connect to the Anthropic API. Check your network connection and try again.' });
+    }
     const message = err?.message || 'An unexpected error occurred.';
     return res.status(502).json({ error: `AI service error: ${message}` });
   }

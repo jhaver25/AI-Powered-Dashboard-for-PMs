@@ -98,3 +98,13 @@
   flex-wrap: wrap;
   gap: 0.25rem;
 }
+
+.data-table__divider-row td {
+  background: var(--gray-50) !important;
+  padding: 0.4rem 1rem !important;
+  border-bottom: 1px solid var(--gray-200) !important;
+}
+
+.data-table__divider-row:hover td {
+  background: var(--gray-50) !important;
+}

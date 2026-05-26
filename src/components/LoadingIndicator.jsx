@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import './LoadingIndicator.css'
 
 const STEPS = [
@@ -10,6 +11,15 @@ const STEPS = [
 ]
 
 export default function LoadingIndicator() {
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const slow = elapsed >= 45
+
   return (
     <div className="loading">
       <div className="loading__card card">
@@ -21,6 +31,16 @@ export default function LoadingIndicator() {
           Claude is reading your project status and building the executive dashboard.
           This typically takes 10–30 seconds.
         </p>
+        <div className="loading__elapsed" aria-live="polite">
+          <span className={slow ? 'loading__elapsed-time loading__elapsed-time--slow' : 'loading__elapsed-time'}>
+            {elapsed}s elapsed
+          </span>
+          {slow && (
+            <span className="loading__slow-note">
+              Taking longer than usual — still working…
+            </span>
+          )}
+        </div>
         <div className="loading__steps" aria-label="Processing steps">
           {STEPS.map((step, i) => (
             <div

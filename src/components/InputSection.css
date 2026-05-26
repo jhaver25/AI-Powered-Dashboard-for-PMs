@@ -81,6 +81,31 @@
   gap: 0.5rem;
 }
 
+.input-section__char-count--near {
+  color: var(--amber, #b45309);
+}
+
+.input-section__char-count--over {
+  color: var(--red, #dc2626);
+  font-weight: 600;
+}
+
+.input-section__warning {
+  font-size: 0.8125rem;
+  color: var(--amber, #b45309);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  line-height: 1.5;
+}
+
+.input-section__warning--error {
+  color: var(--red, #dc2626);
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
 .input-section__actions {
   margin-top: 1.25rem;
   display: flex;
