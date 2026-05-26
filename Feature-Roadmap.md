@@ -3,6 +3,7 @@
 ## Prioritized List
 1. Reformat dashboard to display high urgency decisions and key risks FIRST, as these are more important for executives.
 2. Add flag for 'Stable' to indicate no RAG status change from the previous report (currently only displaying "Improved" or "Worsened")
+3. Add RAG status-change flags in markdown exports (currently onlt available in webpage view)
 3. Provide action button to save reports; create DB for longer-term report storage and to enable trending over longer periods of time
 4. Ability to create 'Programs' to tie ongoing status updates together (needed for enabling trending properly across teams and programs)
 
