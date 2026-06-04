@@ -1,0 +1,305 @@
+PROGRAM STATUS NOTES — Q3 REVIEW
+Week of May 25, 2026
+
+TEAMS: Frontend Engineering | Backend Engineering | Mobile Engineering |
+       Data Science & AI | DevOps & Infrastructure | Security Engineering
+
+================================================================
+
+## Customer Portal Redesign
+Status: ON TRACK
+Teams: Frontend Engineering, Backend Engineering
+
+The redesign hit its major milestone this week with all 47 design system
+components deployed to staging and passing WCAG 2.1 AA accessibility audits.
+The Backend team delivered the BFF (Backend for Frontend) API layer ahead of
+schedule, unblocking Frontend for the remaining four feature modules.
+
+Accomplishments:
+- Design system v1.0 live in staging; all components passing accessibility audit
+- BFF API layer complete and integrated with authentication service
+- Lighthouse performance score improved from 61 to 89
+- UAT kickoff completed with 12 pilot users; initial feedback positive
+
+Risks:
+- Third-party analytics SDK causing ~15ms render delay on dashboard page; team
+  investigating lazy-load mitigation. Low risk to timeline.
+- Brand team is 3 business days late delivering final logo and icon assets;
+  escalation underway. Minor risk.
+
+Dependencies:
+- Legal review of updated Terms of Service copy must complete before launch
+  (in progress, expected in 2 weeks)
+- Backend Engineering must finalize API rate limiting config before load testing
+  can begin
+- Shared design tokens must be finalized 2 weeks before Mobile App v5.0 launch
+  to ensure cross-platform visual consistency
+
+Executive decisions needed: None at this time.
+
+Immediate next steps:
+- Complete 4 remaining feature modules (Account Settings, Notification
+  Preferences, Billing Summary, Support Center)
+- Begin load testing once rate limiting config is finalized
+- Resolve analytics SDK render delay
+
+Long-term next steps:
+- Phased rollout: 10% of users Week 1, 50% Week 2, 100% Week 3
+- Finalize post-launch monitoring plan
+- Internationalization (i18n) for 3 target markets planned for Q4
+
+
+================================================================
+
+## Payment Processing Modernization
+Status: AT RISK
+Teams: Backend Engineering, DevOps & Infrastructure, Security Engineering
+
+Migration from the legacy Stripe v2 + custom gateway to a unified Stripe v3
+implementation is progressing but has encountered compliance-related delays.
+Security Engineering flagged that the PCI-DSS assessment timeline conflicts with
+the planned go-live date, and DevOps has identified infrastructure changes
+required to reduce PCI scope that were not in the original plan.
+
+Accomplishments:
+- Stripe v3 integration complete in dev environment; all payment flows tested
+- Tokenization service deployed to staging with zero-downtime migration path
+- PCI scope reduction architecture finalized with Security Engineering
+- Chargeback reconciliation logic rewritten and validated
+
+Risks:
+- HIGH: PCI-DSS audit is scheduled for Week 6 of an 8-week project. Any
+  remediation finding pushes go-live by at least 3 weeks.
+- HIGH: Legacy gateway contract expires in 10 weeks — insufficient buffer if
+  go-live slips.
+- MEDIUM: 3 internal teams (Subscriptions, Marketplace, International) have
+  direct integrations with the legacy payment API that must be migrated before
+  cutover; Subscriptions team is tracking 2 weeks behind schedule.
+
+Dependencies:
+- Security Engineering PCI gap assessment is 1 week overdue; DevOps cannot
+  finalize network segmentation until it is delivered.
+- Zero-Trust Security team: new Stripe v3 infrastructure must be Zero-Trust
+  compliant from Day 1 — joint design session needed.
+- Fraud Detection team: Stripe v3 transaction event schema changes must be
+  communicated to Data Science & AI before cutover to prevent feature pipeline
+  breakage.
+
+Executive decisions needed:
+- URGENT: If the PCI audit reveals significant findings, leadership must decide
+  whether to extend the legacy gateway contract (~$180K/quarter) or accept
+  elevated compliance risk and proceed on schedule. Risk tolerance threshold
+  must be set before the audit begins.
+
+Immediate next steps:
+- Security Engineering to deliver PCI gap assessment by EOW
+- Backend Engineering to begin parallel migration of Subscriptions team legacy
+  API integrations
+- DevOps to complete network segmentation design once gap assessment is in
+
+Long-term next steps:
+- Legacy gateway decommission plan (estimated 60 days post-go-live)
+- Expand tokenization service to cover all stored payment methods
+- Evaluate dynamic 3D Secure for fraud reduction in Q4
+
+
+================================================================
+
+## Real-Time Recommendation Engine
+Status: OFF TRACK
+Teams: Data Science & AI, Backend Engineering, DevOps & Infrastructure
+
+The real-time recommendation engine — intended to replace our batch-based
+collaborative filtering system — is significantly behind schedule and facing
+compounding technical and budget issues. Model latency is 3x the 150ms SLA
+target, cloud costs are running 240% over budget, and the feature store that
+Backend Engineering was supposed to deliver 3 weeks ago has still not arrived.
+An executive decision on path forward is urgently needed.
+
+Accomplishments:
+- Candidate generation model v0.4 achieving 78% relevance@10, up from 71% in v0.3
+- A/B testing infrastructure deployed and validated
+- Initial feature store schema designed and reviewed
+
+Risks:
+- CRITICAL: Model inference latency at 450ms P99 against a 150ms SLA. Root
+  cause is the two-tower architecture. Team is evaluating ANN caching as
+  mitigation but that work is not currently scoped.
+- HIGH: Cloud compute costs for training are $47K/month against a $20K budget.
+  Unsustainable without an architectural change or budget increase.
+- HIGH: Feature store not delivered by Backend Engineering (3 weeks overdue, no
+  confirmed date). Data Science team is using a temporary workaround that will
+  not scale to production.
+- MEDIUM: No schedule buffer for ANN caching work — any further delay pushes
+  past the Q3 board commitment.
+
+Dependencies:
+- BLOCKED: Feature store delivery from Backend Engineering. This is the single
+  biggest technical blocker on the project.
+- DevOps must provision GPU cluster expansion before retraining can scale —
+  requires budget approval first.
+- Real-time A/B testing requires UI surface area coordination with the Customer
+  Portal Redesign team.
+
+Executive decisions needed:
+- CRITICAL: Project will miss Q3 deadline and is over budget. Three options for
+  leadership decision: (1) Increase cloud budget $60K/month and maintain full
+  scope, (2) Descope to a simpler matrix factorization approach that can hit the
+  timeline, or (3) Push to Q4 and build the real-time engine correctly. Team
+  recommends option 2 or 3. Decision needed by Thursday.
+- If option 1 is chosen: GPU cluster expansion budget approval required.
+
+Immediate next steps:
+- Data Science & AI: present ANN caching feasibility and the 3 path options to
+  leadership by Thursday
+- Backend Engineering: provide firm delivery date for feature store this week
+- DevOps: right-sizing cost analysis for GPU cluster
+
+Long-term next steps:
+- If descoped (option 2): deploy matrix factorization model by Q3; plan
+  real-time engine for Q1 next year
+- Regardless of path: implement MLflow model registry for proper experiment
+  tracking and reproducibility
+
+
+================================================================
+
+## Mobile App v5.0 Launch
+Status: ON TRACK
+Teams: Mobile Engineering, Backend Engineering
+
+Mobile App v5.0 is 5 weeks from launch and in strong shape. Both iOS and Android
+builds are feature-complete and in regression testing. The release introduces a
+redesigned home screen, push notification overhaul, and deep integration with the
+new backend notification service delivered by Backend Engineering last sprint.
+Push notification open rates improved 28% in beta vs. the v4.x baseline.
+
+Accomplishments:
+- iOS and Android feature development 100% complete; both builds in regression
+- All 34 deep link schemas validated
+- Push notification open rates +28% in beta vs. v4.x baseline
+- App binary size reduced 18% (iOS) and 22% (Android) through dependency pruning
+- Crashlytics crash-free session rate at 99.7% in beta (target: 99.5%)
+
+Risks:
+- LOW: App Store review times have historically spiked to 7+ days during Apple
+  policy periods — submitting 10 days early as buffer.
+- LOW: One Android regression in the checkout deep link affects ~2% of entry
+  points; fix in progress, expected resolution by EOW.
+
+Dependencies:
+- Backend Engineering notification service must remain stable in production
+  before mobile launch — currently on track, monitoring closely.
+- Customer Portal Redesign: shared design tokens must be finalized 2 weeks
+  before mobile launch to ensure visual consistency across web and mobile.
+
+Executive decisions needed: None — all open decisions resolved last sprint.
+
+Immediate next steps:
+- Complete regression testing (target: end of Week 2)
+- Fix Android checkout deep link regression
+- Submit iOS build for App Store review in Week 3
+- Finalize launch runbook and rollback plan
+
+Long-term next steps:
+- v5.1 planning: iOS widget support and Android predictive app actions
+- In-app ML-powered search integration (dependent on Recommendation Engine)
+- Expand beta program from 500 to 5,000 users for v5.1 cycle
+
+
+================================================================
+
+## Zero-Trust Security Architecture Rollout
+Status: AT RISK
+Teams: Security Engineering, DevOps & Infrastructure, Backend Engineering
+
+The company-wide Zero-Trust implementation is in Phase 3 of 6 (service-to-service
+mTLS enforcement) and is 3 weeks behind schedule. The delay stems from a
+later-than-expected certificate authority migration and more remediation work than
+anticipated from backend service owners. No executive decision is needed yet, but
+the program will likely slip its year-end completion target if Phase 3 is not
+recovered in the next 2 weeks.
+
+Accomplishments:
+- Phases 1 (identity) and 2 (device trust) complete and stable; 100% of
+  employee devices enrolled
+- mTLS enabled on 31 of 67 target backend services (46%)
+- Internal PKI certificate authority migration completed with zero outages
+- Security posture dashboard live with real-time Zero-Trust compliance coverage
+
+Risks:
+- HIGH: 36 backend services remain on the mTLS rollout. At current velocity
+  Phase 3 completes 4 weeks late, compressing phases 4-6 and threatening the
+  year-end commitment.
+- MEDIUM: 4 legacy services are architecturally incompatible with mTLS and
+  require changes from Backend Engineering that are not yet scoped or scheduled.
+- LOW: External penetration test is scheduled during Phase 4 — if Phase 3 slips,
+  the pentest may need to be rescheduled (vendor availability uncertain).
+
+Dependencies:
+- Backend Engineering owners of the 36 remaining services must allocate capacity
+  for mTLS integration work, currently competing with feature development.
+- DevOps: certificate rotation automation must be deployed before Phase 4 begins.
+- Payment Processing Modernization: new Stripe v3 infrastructure must be
+  Zero-Trust compliant from Day 1; joint design session with DevOps required.
+
+Executive decisions needed:
+- If Phase 3 cannot be recovered before the pentest window: should we reschedule
+  the external pentest (~$45K additional cost) or proceed with incomplete Phase 3
+  coverage and accept a finding? Security Engineering recommends rescheduling.
+
+Immediate next steps:
+- Security Engineering: publish revised Phase 3 schedule with new completion date
+- Backend Engineering: identify service owners and schedule mTLS work for the
+  36 remaining services
+- DevOps: complete certificate rotation automation deployment (currently staging)
+
+Long-term next steps:
+- Phase 4: network micro-segmentation (Q4 target)
+- Phase 5: data access controls and DLP integration
+- Phase 6: continuous compliance monitoring and automated remediation (Q1 2027)
+
+
+================================================================
+
+## Fraud Detection ML Model v2
+Status: ON TRACK
+Teams: Data Science & AI, Security Engineering, Backend Engineering
+
+Fraud Detection v2 has been in full production for 45 days and is performing
+above all baseline targets. The gradient boosting ensemble model with real-time
+feature pipeline has meaningfully improved both catch rates and false positive
+rates. The team is now focused on monitoring, drift detection, and scoping v3.
+
+Accomplishments:
+- Model v2 deployed to 100% of production traffic after 30-day shadow mode
+- False positive rate reduced from 2.3% to 0.9% (target was 1.5%)
+- Fraud catch rate improved from 84% to 91% (target was 88%)
+- Real-time feature pipeline processing 14,000 transactions/second at 22ms P99
+- Estimated $2.1M annualized fraud loss prevention based on first 45 days
+
+Risks:
+- LOW: Model drift monitoring shows early signs of feature distribution shift in
+  international transaction patterns — not yet actionable but being tracked.
+- LOW: Explainability requirements for EU AI Act compliance need to be scoped for
+  v3 — timeline is approximately 12 months out.
+
+Dependencies:
+- Security Engineering: new chargeback data feed integration needed for v3
+  training data (scheduled Q4).
+- Payment Processing team must communicate Stripe v3 transaction event schema
+  changes to Data Science & AI before the Stripe cutover to prevent feature
+  pipeline failures.
+
+Executive decisions needed: None — project is healthy and performing above target.
+
+Immediate next steps:
+- Monitor model performance and drift metrics through Q3
+- Begin v3 scoping: explainability features, international pattern expansion
+- Coordinate with Payment Processing team on Stripe v3 schema impact
+
+Long-term next steps:
+- Fraud Detection v3: graph neural network approach for network-level fraud
+  detection (Q1 2027 target)
+- Expand model coverage to account takeover and promo abuse use cases
+- Evaluate federated learning for privacy-preserving cross-merchant signals
