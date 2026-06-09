@@ -3,6 +3,11 @@
 An AI-powered web application that transforms unstructured project status notes into a structured executive briefing. Paste raw meeting notes, status updates, or any free-form project text — the app uses Claude AI to extract and organize the information into a portfolio-level dashboard for C-level stakeholders.
 
 ---
+## Demo Recording
+
+Accessible via Loom: https://www.loom.com/share/52e902cde5b74e7780e4b5de5d46d61d
+
+---
 
 ## What It Does
 
